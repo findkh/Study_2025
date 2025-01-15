@@ -20,8 +20,6 @@
 - **Similarity Retriever 맞은 개수**: 6/10
 - **MMR Retriever 맞은 개수**: 7/10
 
-# 임베딩 모델 비교 테스트
-
 ### nlpai-lab/KoE5 결과
 
 | Question                                                      | Correct Answers | Similarity Retriever Results | Similarity Retriever Result | MMR Retriever Results | MMR Retriever Result |
