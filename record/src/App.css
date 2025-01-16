@@ -1,0 +1,7 @@
+/* 스타일시트에서 추가 */
+.waveform-container {
+  width: 100%;
+  height: 90px;
+  max-width: 600px; /* 최대 너비를 제한 */
+  margin: 0 auto; /* 중앙 정렬 */
+}
