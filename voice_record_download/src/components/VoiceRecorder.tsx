@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import { FaStop, FaPlay, FaPause, FaDownload } from "react-icons/fa";
+import { FaStop, FaPlay, FaPause, FaDownload, FaEdit } from "react-icons/fa";
 import { Dropdown, Space, Button } from "antd";
 import Recorder from "./Recorder";
 import Playback from "./Playback";
-import useDownload from "../hooks/useDownload"; // 경로에 맞게 수정
+import useDownload from "../hooks/useDownload";
 import { WAVESURFER_MESSAGE } from "../constants/Message";
 
 const VoiceRecorder: React.FC = () => {
@@ -11,11 +11,11 @@ const VoiceRecorder: React.FC = () => {
   const [isRecording, setIsRecording] = useState(false); // 녹음 상태
   const [isPaused, setIsPaused] = useState(false); // 녹음 일시정지 상태
   const [isPlaying, setIsPlaying] = useState(false); // 재생 상태
+  const [isEditing, setIsEditing] = useState(false); // 영역 지정 상태
   const [playbackType, setPlaybackType] =
     useState<keyof typeof WAVESURFER_MESSAGE>("RECORD");
   const { downloadFile } = useDownload(recordedUrl); // 다운로드 훅 사용
 
-  // 녹음 완료 핸들러
   const handleRecordingComplete = (blob: Blob) => {
     const url = URL.createObjectURL(blob);
     setRecordedUrl(url);
@@ -24,37 +24,39 @@ const VoiceRecorder: React.FC = () => {
     setPlaybackType("RECORD");
   };
 
-  // 녹음 시작 핸들러
   const handleRecordStart = () => {
     setRecordedUrl(null);
     setIsRecording(true);
     setIsPaused(false);
     setIsPlaying(false);
-    setPlaybackType("RECORD"); // 초기값을 유지
+    setPlaybackType("RECORD");
   };
 
-  // 녹음 중지 핸들러
   const handleRecordStop = () => {
     setIsRecording(false);
     setIsPaused(false);
   };
 
-  // 녹음 일시정지 핸들러
   const handleRecordPause = () => {
     setIsPaused((prev) => !prev);
   };
 
-  // 재생/일시정지 핸들러
   const handlePlayPause = () => {
     setIsPlaying((prev) => !prev);
   };
 
-  // 재생 완료 핸들러
   const handlePlaybackFinish = () => {
     setIsPlaying(false);
   };
 
-  // 다운로드 메뉴 항목
+  const handlePlaybackStop = () => {
+    setIsPlaying(false);
+  };
+
+  const handleEdit = () => {
+    setIsEditing((prev) => !prev);
+  };
+
   const downloadMenuItems = [
     {
       label: "Download as Webm",
@@ -82,63 +84,52 @@ const VoiceRecorder: React.FC = () => {
         />
       ) : (
         <Playback
-          key={recordedUrl || "placeholder"} // URL 변경 시 리렌더링
+          key={recordedUrl || "placeholder"}
           url={recordedUrl}
           isPlaying={isPlaying}
+          isEditing={isEditing} // 편집 상태 전달
           onFinish={handlePlaybackFinish}
+          onPlaybackStop={handlePlaybackStop} // Stop 콜백 전달
           type={playbackType}
         />
       )}
 
       <div style={{ marginTop: "1rem", textAlign: "center" }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            gap: "1rem",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              gap: "1rem",
-            }}
-          >
-            {isRecording ? (
-              <>
-                <button onClick={handleRecordStop} style={buttonStyle}>
-                  <FaStop style={iconStyle} />
-                </button>
-                <button onClick={handleRecordPause} style={buttonStyle}>
-                  {isPaused ? (
-                    <FaPlay style={iconStyle} />
-                  ) : (
-                    <FaPause style={iconStyle} />
-                  )}
-                </button>
-              </>
-            ) : recordedUrl ? (
-              <>
-                <button onClick={handleRecordStart} style={buttonStyle}>
-                  <div style={innerCircleStyle}></div>
-                </button>
-                <button onClick={handlePlayPause} style={buttonStyle}>
-                  {isPlaying ? (
-                    <FaPause style={iconStyle} />
-                  ) : (
-                    <FaPlay style={iconStyle} />
-                  )}
-                </button>
-              </>
-            ) : (
+        <div style={{ display: "flex", justifyContent: "center", gap: "1rem" }}>
+          {isRecording ? (
+            <>
+              <button onClick={handleRecordStop} style={buttonStyle}>
+                <FaStop style={iconStyle} />
+              </button>
+              <button onClick={handleRecordPause} style={buttonStyle}>
+                {isPaused ? (
+                  <FaPlay style={iconStyle} />
+                ) : (
+                  <FaPause style={iconStyle} />
+                )}
+              </button>
+            </>
+          ) : recordedUrl ? (
+            <>
               <button onClick={handleRecordStart} style={buttonStyle}>
                 <div style={innerCircleStyle}></div>
               </button>
-            )}
-          </div>
+              <button onClick={handlePlayPause} style={buttonStyle}>
+                {isPlaying ? (
+                  <FaPause style={iconStyle} />
+                ) : (
+                  <FaPlay style={iconStyle} />
+                )}
+              </button>
+              <button onClick={handleEdit} style={buttonStyle}>
+                <FaEdit style={iconStyle} />
+              </button>
+            </>
+          ) : (
+            <button onClick={handleRecordStart} style={buttonStyle}>
+              <div style={innerCircleStyle}></div>
+            </button>
+          )}
 
           {recordedUrl && (
             <Dropdown menu={{ items: downloadMenuItems }} trigger={["click"]}>

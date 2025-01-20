@@ -1,27 +1,33 @@
 import React, { useEffect, useRef, useState } from "react";
 import WaveSurfer from "wavesurfer.js";
+import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.esm.js";
 import { WAVESURFER_MESSAGE } from "../constants/Message";
 
 // Props 타입 정의
 interface PlaybackProps {
   url: string | null; // 오디오 URL
   isPlaying: boolean; // 재생 상태
+  isEditing: boolean; // 드래그 가능 여부
   onFinish: () => void; // 재생 완료 시 호출되는 콜백
+  onPlaybackStop: () => void; // 재생 멈출 때 호출되는 콜백
   type: keyof typeof WAVESURFER_MESSAGE; // 메시지 타입
 }
 
-const Playback: React.FC<PlaybackProps> = ({ url, isPlaying, onFinish, type }) => {
+const Playback: React.FC<PlaybackProps> = ({
+  url,
+  isPlaying,
+  isEditing,
+  onFinish,
+  onPlaybackStop, // Stop 콜백 추가
+  type,
+}) => {
   const waveSurferRef = useRef<WaveSurfer | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isWaveReady, setIsWaveReady] = useState(false);
 
   useEffect(() => {
-    console.log(type);
-  }, [type]);
-
-  // WaveSurfer 초기화 및 오디오 로드
-  useEffect(() => {
     if (containerRef.current && url) {
+      const regions = RegionsPlugin.create();
       const waveSurfer = WaveSurfer.create({
         container: containerRef.current,
         waveColor: "#706d6b",
@@ -29,38 +35,54 @@ const Playback: React.FC<PlaybackProps> = ({ url, isPlaying, onFinish, type }) =
         cursorColor: "#d81313",
         cursorWidth: 1,
         height: 250,
+        plugins: [regions],
       });
 
-      // 오디오 URL을 WaveSurfer에 로드
       waveSurfer.load(url);
 
-      // 재생 완료 이벤트 처리
       waveSurfer.on("finish", () => {
         onFinish(); // 재생 완료 시 부모 컴포넌트의 onFinish 호출
+        onPlaybackStop(); // 재생 종료 시 부모에게 상태 전달
       });
 
-      // 파형이 준비되었을 때 상태 업데이트
       waveSurfer.on("ready", () => {
         setIsWaveReady(true);
       });
 
       waveSurferRef.current = waveSurfer;
 
-      // 컴포넌트 언마운트 시 WaveSurfer 인스턴스 제거
+      // 드래그 가능 여부를 isEditing에 따라 설정
+      if (isEditing) {
+        regions.enableDragSelection({
+          color: "rgba(105, 120, 231, 0.1)",
+        });
+      }
+
+      regions.on("region-created", (region) => {
+        console.log("region", region.start, region.end);
+        regions.getRegions().forEach((r) => {
+          if (r.id !== region.id) r.remove();
+        });
+      });
+
+      regions.on("region-out", (region) => {
+        region.play();
+        waveSurfer.pause();
+        onPlaybackStop(); // 재생 멈췄을 때 상태 변경
+      });
+
       return () => {
         waveSurfer.destroy();
-        setIsWaveReady(false); // 컴포넌트 언마운트 시 초기화
+        setIsWaveReady(false);
       };
     } else {
-      // url이 없을 때 WaveSurfer 초기화
       if (waveSurferRef.current) {
         waveSurferRef.current.empty();
-        setIsWaveReady(false); // URL이 없을 때 상태 초기화
+        setIsWaveReady(false);
       }
     }
-  }, [url]); // URL이 변경될 때마다 새로운 오디오를 로드
+  }, [url, isEditing]);
 
-  // play 상태가 변경될 때마다 WaveSurfer에서 play/pause 처리
   useEffect(() => {
     if (waveSurferRef.current) {
       if (isPlaying) {
@@ -69,20 +91,19 @@ const Playback: React.FC<PlaybackProps> = ({ url, isPlaying, onFinish, type }) =
         waveSurferRef.current.pause();
       }
     }
-  }, [isPlaying]); // isPlaying 상태 변경 시 재생/일시정지 처리
+  }, [isPlaying]);
 
   return (
     <div
-      ref={containerRef} // WaveSurfer가 렌더링될 컨테이너
+      ref={containerRef}
       style={{
         marginBottom: "1rem",
         backgroundColor: "rgb(246 246 246)",
-        height: "250px", // 고정된 높이를 설정
-        border: url || isWaveReady ? "none" : "2px dashed #ccc", // URL 없을 때 테두리 표시
+        height: "250px",
+        border: url || isWaveReady ? "none" : "2px dashed #ccc",
         position: "relative",
       }}
     >
-      {/* 안내 메시지 (항상 렌더링) */}
       {!isWaveReady && (
         <div
           style={{
