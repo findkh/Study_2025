@@ -12,6 +12,8 @@ const VoiceRecorder: React.FC = () => {
   const [isPaused, setIsPaused] = useState(false); // 녹음 일시정지 상태
   const [isPlaying, setIsPlaying] = useState(false); // 재생 상태
   const [isEditing, setIsEditing] = useState(false); // 영역 지정 상태
+  const [starttime, setStarttime] = useState<number | null>(null); // 영역 시작 시간
+  const [endtime, setEndtime] = useState<number | null>(null); // 영역 끝 시간
   const [playbackType, setPlaybackType] =
     useState<keyof typeof WAVESURFER_MESSAGE>("RECORD");
   const { downloadFile } = useDownload(recordedUrl); // 다운로드 훅 사용
@@ -57,6 +59,20 @@ const VoiceRecorder: React.FC = () => {
     setIsEditing((prev) => !prev);
   };
 
+  const handleReset = () => {
+    setIsEditing(false);
+  };
+
+  const handleSave = () => {
+    // 저장 시 starttime과 endtime을 이용해 처리
+    if (starttime !== null && endtime !== null) {
+      console.log(`Saved region: ${starttime} - ${endtime}`);
+      // 여기에 저장 로직 작성
+    } else {
+      console.log("No region selected");
+    }
+  };
+
   const downloadMenuItems = [
     {
       label: "Download as Webm",
@@ -87,10 +103,14 @@ const VoiceRecorder: React.FC = () => {
           key={recordedUrl || "placeholder"}
           url={recordedUrl}
           isPlaying={isPlaying}
-          isEditing={isEditing} // 편집 상태 전달
+          isEditing={isEditing}
           onFinish={handlePlaybackFinish}
-          onPlaybackStop={handlePlaybackStop} // Stop 콜백 전달
+          onPlaybackStop={handlePlaybackStop}
           type={playbackType}
+          onRegionChange={({ start, end }) => {
+            setStarttime(start);
+            setEndtime(end);
+          }}
         />
       )}
 
@@ -121,9 +141,21 @@ const VoiceRecorder: React.FC = () => {
                   <FaPlay style={iconStyle} />
                 )}
               </button>
-              <button onClick={handleEdit} style={buttonStyle}>
-                <FaEdit style={iconStyle} />
-              </button>
+              {!isEditing && (
+                <button onClick={handleEdit} style={buttonStyle}>
+                  <FaEdit style={iconStyle} />
+                </button>
+              )}
+              {isEditing && (
+                <>
+                  <button onClick={handleReset} style={buttonStyle}>
+                    영역 삭제
+                  </button>
+                  <button onClick={handleSave} style={buttonStyle}>
+                    영역 저장
+                  </button>
+                </>
+              )}
             </>
           ) : (
             <button onClick={handleRecordStart} style={buttonStyle}>
