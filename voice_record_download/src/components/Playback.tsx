@@ -63,6 +63,8 @@ const Playback: React.FC<PlaybackProps> = ({
         regions.getRegions().forEach((r) => {
           if (r.id !== region.id) r.remove();
         });
+
+        waveSurfer.seekTo(region.start / waveSurfer.getDuration());
       });
 
       regions.on("region-out", (region) => {
