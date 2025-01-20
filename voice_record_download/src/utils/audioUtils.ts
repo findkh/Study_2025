@@ -11,7 +11,7 @@ export const fetchBlob = async (url: string): Promise<Blob> => {
 };
 
 // AudioBuffer를 WAV로 변환
-const audioBufferToWav = (
+export const audioBufferToWav = (
   buffer: AudioBuffer,
   numChannels: number,
   sampleRate: number

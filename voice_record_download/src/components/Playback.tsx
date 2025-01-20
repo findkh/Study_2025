@@ -3,14 +3,15 @@ import WaveSurfer from "wavesurfer.js";
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.esm.js";
 import { WAVESURFER_MESSAGE } from "../constants/Message";
 
+// Props 타입 정의
 interface PlaybackProps {
-  url: string | null;
-  isPlaying: boolean;
-  isEditing: boolean;
-  onFinish: () => void;
-  onPlaybackStop: () => void;
-  type: keyof typeof WAVESURFER_MESSAGE;
-  onRegionChange: (region: { start: number; end: number }) => void; // 부모에서 전달받은 콜백
+  url: string | null; // 오디오 URL
+  isPlaying: boolean; // 재생 상태
+  isEditing: boolean; // 드래그 가능 여부
+  onFinish: () => void; // 재생 완료 시 호출되는 콜백
+  onPlaybackStop: () => void; // 재생 멈출 때 호출되는 콜백
+  type: keyof typeof WAVESURFER_MESSAGE; // 메시지 타입
+  onRegionChange: (start: number, end: number) => void; // region 변경 콜백
 }
 
 const Playback: React.FC<PlaybackProps> = ({
@@ -18,7 +19,7 @@ const Playback: React.FC<PlaybackProps> = ({
   isPlaying,
   isEditing,
   onFinish,
-  onPlaybackStop,
+  onPlaybackStop, // Stop 콜백 추가
   type,
   onRegionChange,
 }) => {
@@ -42,8 +43,8 @@ const Playback: React.FC<PlaybackProps> = ({
       waveSurfer.load(url);
 
       waveSurfer.on("finish", () => {
-        onFinish();
-        onPlaybackStop();
+        onFinish(); // 재생 완료 시 부모 컴포넌트의 onFinish 호출
+        onPlaybackStop(); // 재생 종료 시 부모에게 상태 전달
       });
 
       waveSurfer.on("ready", () => {
@@ -52,6 +53,7 @@ const Playback: React.FC<PlaybackProps> = ({
 
       waveSurferRef.current = waveSurfer;
 
+      // 드래그 가능 여부를 isEditing에 따라 설정
       if (isEditing) {
         regions.enableDragSelection({
           color: "rgba(105, 120, 231, 0.1)",
@@ -64,17 +66,33 @@ const Playback: React.FC<PlaybackProps> = ({
           if (r.id !== region.id) r.remove();
         });
         waveSurfer.seekTo(region.start / waveSurfer.getDuration());
+        onRegionChange(region.start, region.end);
+      });
 
-        // 부모에게 starttime과 endtime 전달
-        if (onRegionChange) {
-          onRegionChange({ start: region.start, end: region.end });
-        }
+      regions.on("region-update", (region) => {
+        console.log("region update", region.start, region.end);
+        regions.getRegions().forEach((r) => {
+          if (r.id !== region.id) r.remove();
+        });
+        waveSurfer.seekTo(region.start / waveSurfer.getDuration());
+        onRegionChange(region.start, region.end);
+      });
+
+      regions.on("region-out", (region) => {
+        region.play();
+        waveSurfer.pause();
+        onPlaybackStop(); // 재생 멈췄을 때 상태 변경
       });
 
       return () => {
         waveSurfer.destroy();
         setIsWaveReady(false);
       };
+    } else {
+      if (waveSurferRef.current) {
+        waveSurferRef.current.empty();
+        setIsWaveReady(false);
+      }
     }
   }, [url, isEditing]);
 
@@ -89,7 +107,16 @@ const Playback: React.FC<PlaybackProps> = ({
   }, [isPlaying]);
 
   return (
-    <div ref={containerRef} style={{ height: "250px" }}>
+    <div
+      ref={containerRef}
+      style={{
+        marginBottom: "1rem",
+        backgroundColor: "rgb(246 246 246)",
+        height: "250px",
+        border: url || isWaveReady ? "none" : "2px dashed #ccc",
+        position: "relative",
+      }}
+    >
       {!isWaveReady && (
         <div
           style={{
@@ -98,6 +125,8 @@ const Playback: React.FC<PlaybackProps> = ({
             left: "50%",
             transform: "translate(-50%, -50%)",
             color: "#aaa",
+            fontSize: "16px",
+            textAlign: "center",
           }}
         >
           {WAVESURFER_MESSAGE[type]}

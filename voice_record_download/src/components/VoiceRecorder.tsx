@@ -66,8 +66,8 @@ const VoiceRecorder: React.FC = () => {
   const handleSave = () => {
     // 저장 시 starttime과 endtime을 이용해 처리
     if (starttime !== null && endtime !== null) {
-      console.log(`Saved region: ${starttime} - ${endtime}`);
       // 여기에 저장 로직 작성
+      console.log("저장 클릭", starttime, endtime);
     } else {
       console.log("No region selected");
     }
@@ -107,7 +107,8 @@ const VoiceRecorder: React.FC = () => {
           onFinish={handlePlaybackFinish}
           onPlaybackStop={handlePlaybackStop}
           type={playbackType}
-          onRegionChange={({ start, end }) => {
+          onRegionChange={(start, end) => {
+            console.log("부모,", start, end);
             setStarttime(start);
             setEndtime(end);
           }}
