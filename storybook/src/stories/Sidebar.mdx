@@ -1,0 +1,53 @@
+import { Meta, Story, Canvas } from "@storybook/blocks";
+import Sidebar from "../components/sidebar/Sidebar";
+
+<Meta title="TEST/Sidebar" component={Sidebar} />
+
+# Sidebar 컴포넌트
+
+Ant Design의 `Menu`를 활용하여 반응형 사이드바를 구현.  
+기본적으로 메뉴는 접었다 펼 수 있으며, `collapsed` 상태를 조절할 수 있다.
+
+## 📌 데이터 구조 (Menu Items)
+
+```
+const items = [
+  { key: "1", icon: <PieChartOutlined />, label: "Option 1" },
+  {
+    key: "sub1",
+    label: "Navigation One",
+    icon: <MailOutlined />,
+    children: [
+      { key: "5", label: "Option 5" },
+      { key: "6", label: "Option 6" },
+    ],
+  },
+];
+```
+
+## Menu
+
+<table>
+  <thead>
+    <tr>
+      <th>Param</th>
+      <th>Description</th>
+      <th>Type</th>
+      <th>Default value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>items</td>
+      <td>메뉴 항목 배열</td>
+      <td>Array</td>
+      <td>[]</td>
+    </tr>
+    <tr>
+      <td>collapsed</td>
+      <td>사이드바 접기/펼치기 상태</td>
+      <td>boolean</td>
+      <td>false</td>
+    </tr>
+  </tbody>
+</table>
